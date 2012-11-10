@@ -17,12 +17,6 @@ Create a `composer.json` file and run `composer install`:
 
     {
         "minimum-stability": "alpha",
-        "repositories": [
-            {
-                "type": "vcs",
-                "url": "http://github.com/gigablah/sphinxphp"
-            }
-        ],
         "require": {
             "gigablah/sphinxphp": "2.0.6-alpha"
         }
