@@ -279,7 +279,7 @@ class SphinxClient
 
         $port = intval($port);
         if ($port < 0 || $port >= 65536) {
-            throw new \InvalidArgumentException('Port name must be an integer between 0 and 65536.');
+            throw new \InvalidArgumentException('Port number must be an integer between 0 and 65536.');
         }
 
         $this->port = ( $port==0 ) ? 9312 : $port;
