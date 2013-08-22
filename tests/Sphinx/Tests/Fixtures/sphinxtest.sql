@@ -1,8 +1,8 @@
 SET NAMES utf8;
 
-DROP TABLE IF EXISTS `test`.`sphinxtest`;
+DROP TABLE IF EXISTS `sphinx`.`sphinxtest`;
 
-CREATE TABLE `test`.`sphinxtest` (
+CREATE TABLE `sphinx`.`sphinxtest` (
 `id` BIGINT UNSIGNED NOT NULL auto_increment,
 `field1` TEXT,
 `field2` TEXT,
@@ -12,7 +12,7 @@ CREATE TABLE `test`.`sphinxtest` (
 `stringattr` VARCHAR(100),
 PRIMARY KEY (`id`)) DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
-INSERT INTO `test`.`sphinxtest` (`id`,`field1`,`field2`,`attr1`,`lat`,`long`,`stringattr`) VALUES
+INSERT INTO `sphinx`.`sphinxtest` (`id`,`field1`,`field2`,`attr1`,`lat`,`long`,`stringattr`) VALUES
 (1, 'a', 'bb', 2, 0.35, 0.70, ''),
 (2, 'a', 'bb ccc', 4, 0.70, 0.35, ''),
 (3, 'a', 'bb ccc dddd', 1, 0.35, 0.70, ''),

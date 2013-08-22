@@ -16,12 +16,21 @@
          strict="true">
     <testsuites>
         <testsuite name="SphinxClient Test Suite">
-            <directory>./tests/Sphinx/</directory>
+            <directory>./tests/Sphinx</directory>
         </testsuite>
     </testsuites>
     <filter>
         <whitelist>
             <directory>./src</directory>
+            <exclude>
+                <directory>./build</directory>
+                <directory>./vendor</directory>
+                <directory>./tests</directory>
+            </exclude>
         </whitelist>
     </filter>
+    <logging>
+        <log type="coverage-clover" target="build/logs/clover.xml"/>
+        <log type="junit" target="build/logs/junit.xml" logIncompleteSkipped="false"/>
+    </logging>
 </phpunit>

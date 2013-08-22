@@ -447,7 +447,6 @@ class SphinxClientTest extends \PHPUnit_Framework_TestCase
     public function testQuery($query, $sphinx, $expected)
     {
         $results = $sphinx->query($query);
-        //print_r($results);
         foreach ($expected as $key => $value) {
             if ($key === 'matches') {
                 $this->assertEquals(array_keys($results['matches']), $value);
