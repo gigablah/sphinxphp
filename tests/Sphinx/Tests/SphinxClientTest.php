@@ -105,12 +105,30 @@ class SphinxClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-    * @expectedException \InvalidArgumentException
-    */
+     * @expectedException \InvalidArgumentException
+     */
     public function testSetServerWithInvalidHostShouldThrowException()
     {
         $sphinx = new SphinxClient();
         $sphinx->setServer(123);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     */
+    public function testSetServerWithNegativePortShouldThrowException()
+    {
+        $sphinx = new SphinxClient();
+        $sphinx->setServer('localhost', -1);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     */
+    public function testSetServerWithInvalidPortShouldThrowException()
+    {
+        $sphinx = new SphinxClient();
+        $sphinx->setServer('localhost', 65536);
     }
 
     public function testSetServerWithSocketShouldSetPath()
@@ -130,6 +148,13 @@ class SphinxClientTest extends \PHPUnit_Framework_TestCase
         $sphinx->setServer('localhost', 3312);
         $this->assertSame($sphinx->host, 'localhost');
         $this->assertSame($sphinx->port, 3312);
+    }
+
+    public function testSetServerWithoutPortShouldSetDefaultPort()
+    {
+        $sphinx = new SphinxClient();
+        $sphinx->setServer('localhost');
+        $this->assertSame($sphinx->port, 9312);
     }
 
     public function testSetConnectTimeout()
@@ -164,8 +189,8 @@ class SphinxClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-    * @expectedException \InvalidArgumentException
-    */
+     * @expectedException \InvalidArgumentException
+     */
     public function testSetMatchModeWithInvalidModeShouldThrowException()
     {
         $sphinx = new SphinxClient();
@@ -181,8 +206,8 @@ class SphinxClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-    * @expectedException \InvalidArgumentException
-    */
+     * @expectedException \InvalidArgumentException
+     */
     public function testSetRankingModeWithInvalidRankerShouldThrowException()
     {
         $sphinx = new SphinxClient();
@@ -190,8 +215,8 @@ class SphinxClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-    * @expectedException \InvalidArgumentException
-    */
+     * @expectedException \InvalidArgumentException
+     */
     public function testSetRankingModeWithExpressionRankerWithoutExpressionShouldThrowException()
     {
         $sphinx = new SphinxClient();
@@ -211,8 +236,8 @@ class SphinxClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-    * @expectedException \InvalidArgumentException
-    */
+     * @expectedException \InvalidArgumentException
+     */
     public function testSetSortModeWithInvalidSortModeShouldThrowException()
     {
         $sphinx = new SphinxClient();
@@ -220,8 +245,8 @@ class SphinxClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-    * @expectedException \InvalidArgumentException
-    */
+     * @expectedException \InvalidArgumentException
+     */
     public function testSetSortModeWithNonRelevanceSortWithoutExpressionShouldThrowException()
     {
         $sphinx = new SphinxClient();
@@ -256,8 +281,8 @@ class SphinxClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-    * @expectedException \InvalidArgumentException
-    */
+     * @expectedException \InvalidArgumentException
+     */
     public function testSetIdRangeWithMinLargerThanMaxShouldThrowException()
     {
         $sphinx = new SphinxClient();
@@ -290,8 +315,8 @@ class SphinxClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-    * @expectedException \InvalidArgumentException
-    */
+     * @expectedException \InvalidArgumentException
+     */
     public function testSetFilterRangeWithMinLargerThanMaxShouldThrowException()
     {
         $sphinx = new SphinxClient();
@@ -312,8 +337,8 @@ class SphinxClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-    * @expectedException \InvalidArgumentException
-    */
+     * @expectedException \InvalidArgumentException
+     */
     public function testSetFilterFloatRangeWithMinLargerThanMaxShouldThrowException()
     {
         $sphinx = new SphinxClient();
@@ -342,8 +367,8 @@ class SphinxClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-    * @expectedException \InvalidArgumentException
-    */
+     * @expectedException \InvalidArgumentException
+     */
     public function testSetGroupByWithInvalidGroupByShouldThrowException()
     {
         $sphinx = new SphinxClient();
@@ -384,8 +409,8 @@ class SphinxClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-    * @expectedException \InvalidArgumentException
-    */
+     * @expectedException \InvalidArgumentException
+     */
     public function testSetOverrideWithInvalidAttributeTypeShouldThrowException()
     {
         $sphinx = new SphinxClient();
