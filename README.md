@@ -1,6 +1,8 @@
 Sphinx Search PHP Client
 ========================
 
+[![Build Status](https://travis-ci.org/gigablah/sphinxphp.png?branch=2.0.x)](https://travis-ci.org/gigablah/sphinxphp) [![Coverage Status](https://coveralls.io/repos/gigablah/sphinxphp/badge.png?branch=2.0.x)](https://coveralls.io/r/gigablah/sphinxphp?branch=2.0.x)
+
 [Sphinx] [1] is an open source full-text search engine.
 
 This project contains a refactored Sphinx PHP client with some minor differences:
@@ -16,9 +18,8 @@ Installation
 Create a `composer.json` file and run `composer install`:
 
     {
-        "minimum-stability": "alpha",
         "require": {
-            "gigablah/sphinxphp": "2.0.6-alpha"
+            "gigablah/sphinxphp": "2.0.*"
         }
     }
 
