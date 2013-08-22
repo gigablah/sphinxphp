@@ -255,7 +255,7 @@ class SphinxClient
      * @param integer $port
      *
      * @return SphinxClient
-     * @throws \InvalidArgumentException When host name is not a valid string or invalid port number
+     * @throws \InvalidArgumentException When host name or port number is invalid
      */
     public function setServer($host, $port = 0)
     {
@@ -282,7 +282,7 @@ class SphinxClient
             throw new \InvalidArgumentException('Port number must be an integer between 0 and 65536.');
         }
 
-        $this->port = ( $port==0 ) ? 9312 : $port;
+        $this->port = $port ?: 9312;
 
         $this->path = '';
 
