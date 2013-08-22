@@ -6,9 +6,9 @@ php:
   - 5.5
 
 before_install:
-    - wget http://sphinxsearch.com/files/sphinx-2.0.8-release.tar.gz
-    - tar xzf sphinx-2.0.8-release.tar.gz
-    - cd sphinx-2.0.8-release
+    - wget http://sphinxsearch.com/files/sphinx-2.1.1-beta.tar.gz
+    - tar xzf sphinx-2.1.1-beta.tar.gz
+    - cd sphinx-2.1.1-beta
     - wget http://snowball.tartarus.org/dist/libstemmer_c.tgz
     - tar xzf libstemmer_c.tgz
     - ./configure --prefix=/usr/local/sphinx --with-libstemmer --with-iconv --with-mysql --enable-id64 --quiet

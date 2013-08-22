@@ -33,9 +33,9 @@ class SphinxClient
     /**
      * Current client-side command implementation versions.
      */
-    const VER_COMMAND_SEARCH         = 0x119;
+    const VER_COMMAND_SEARCH         = 0x11D;
     const VER_COMMAND_EXCERPT        = 0x104;
-    const VER_COMMAND_UPDATE         = 0x102;
+    const VER_COMMAND_UPDATE         = 0x103;
     const VER_COMMAND_KEYWORDS       = 0x100;
     const VER_COMMAND_STATUS         = 0x100;
     const VER_COMMAND_QUERY          = 0x100;
@@ -101,6 +101,7 @@ class SphinxClient
     const SPH_ATTR_FLOAT             = 5;
     const SPH_ATTR_BIGINT            = 6;
     const SPH_ATTR_STRING            = 7;
+    const SPH_ATTR_FACTORS           = 1001;
     const SPH_ATTR_MULTI             = 0x40000001;
     const SPH_ATTR_MULTI64           = 0x40000002;
 
@@ -143,6 +144,12 @@ class SphinxClient
     public $fieldweights;  // per-field-name weights
     public $overrides;     // per-query attribute values overrides
     public $select;        // select-list (attributes or expressions, with optional aliases)
+    public $query_flags;   // per-query various flags
+    public $predictedtime; // per-query max_predicted_time
+    public $outerorderby;  // outer match sort by
+    public $outeroffset;   // outer offset
+    public $outerlimit;    // outer limit
+    public $hasouter;      // whether the query has outer order
     public $error;         // last error message
     public $warning;       // last warning message
     public $connerror;     // connection error vs remote error flag
@@ -187,6 +194,12 @@ class SphinxClient
         $this->fieldweights  = array();
         $this->overrides     = array();
         $this->select        = '*';
+        $this->query_flags   = 0;
+        $this->predictedtime = 0;
+        $this->outerorderby  = '';
+        $this->outeroffset   = 0;
+        $this->outerlimit    = 0;
+        $this->hasouter      = false;
         // per-reply fields (for single-query case)
         $this->error         = '';
         $this->warning       = '';
@@ -1109,6 +1122,97 @@ class SphinxClient
     }
 
     /**
+     * Set per-query flags
+     *
+     * @return SphinxClient
+     */
+    public function setQueryFlag($flag_name, $flag_value)
+    {
+        $flags = array(
+            'reverse_scan' => array(0, 1),
+            'sort_method' => array('pq', 'kbuffer'),
+            'max_predicted_time' => array(0),
+            'boolean_simplify' => array(true, false),
+            'idf' => array('normalized', 'plain')
+        );
+
+        if (!in_array($flag_name, array_keys($flags))) {
+            throw new \InvalidArgumentException('Flag type is invalid.');
+        }
+
+        if ($flag_name == 'max_predicted_time') {
+            if (!is_int($flag_value)) {
+                throw new \InvalidArgumentException('Max predicted time must be an integer.');
+            }
+            if ($flag_value < 0) {
+                throw new \InvalidArgumentException('Max predicted time cannot be negative.');
+            }
+        } else {
+            if (!in_array($flag_value, $flags[$flag_name], true)) {
+                throw new \InvalidArgumentException('Flag value is invalid.');
+            }
+        }
+
+        switch ($flag_name) {
+            case 'reverse_scan':
+                $this->query_flags = $this->setBit($this->query_flags, 0, $flag_value == 1);
+                break;
+            case 'sort_method':
+                $this->query_flags = $this->setBit($this->query_flags, 1, $flag_value == 'kbuffer');
+                break;
+            case 'max_predicted_time':
+                $this->query_flags = $this->setBit($this->query_flags, 2, $flag_value > 0);
+                $this->predictedtime = (int) $flag_value;
+                break;
+            case 'boolean_simplify':
+                $this->query_flags = $this->setBit($this->query_flags, 3, $flag_value);
+                break;
+            case 'idf':
+                $this->query_flags = $this->setBit($this->query_flags, 4, $flag_value == 'plain');
+                break;
+            default:
+                throw new \InvalidArgumentException('internal error: unhandled flag type');
+        }
+
+        return $this;
+    }
+
+    /**
+     * Set outer order by parameters
+     *
+     * @return SphinxClient
+     */
+    public function setOuterSelect($orderby, $offset, $limit)
+    {
+        if (!is_string($orderby)) {
+            throw new \InvalidArgumentException('Ordering expression must be a string.');
+        }
+
+        if (!is_int($offset)) {
+            throw new \InvalidArgumentException('Offset must be an integer.');
+        }
+
+        if (!is_int($limit)) {
+            throw new \InvalidArgumentException('Limit must be an integer.');
+        }
+
+        if ($offset < 0) {
+            throw new \InvalidArgumentException('Offset cannot be negative.');
+        }
+
+        if ($limit <= 0) {
+            throw new \InvalidArgumentException('Limit must be positive.');
+        }
+
+        $this->outerorderby = $orderby;
+        $this->outeroffset  = $offset;
+        $this->outerlimit   = $limit;
+        $this->hasouter     = true;
+
+        return $this;
+    }
+
+    /**
      * Clear all filters (for multi-queries)
      *
      * @return SphinxClient
@@ -1144,6 +1248,34 @@ class SphinxClient
     public function resetOverrides()
     {
         $this->overrides = array();
+
+        return $this;
+    }
+
+    /**
+     * Clear all query flags
+     *
+     * @return SphinxClient
+     */
+    public function resetQueryFlag()
+    {
+        $this->query_flags   = 0;
+        $this->predictedtime = 0;
+
+        return $this;
+    }
+
+    /**
+     * Clear all outer order parameters
+     *
+     * @return SphinxClient
+     */
+    public function resetOuterSelect()
+    {
+        $this->outerorderby = '';
+        $this->outeroffset  = 0;
+        $this->outerlimit   = 0;
+        $this->hasouter     = false;
 
         return $this;
     }
@@ -1219,7 +1351,7 @@ class SphinxClient
         $this->mbPush();
 
         // build request
-        $req = pack('NNNN', $this->offset, $this->limit, $this->mode, $this->ranker);
+        $req = pack('NNNNN', $this->query_flags, $this->offset, $this->limit, $this->mode, $this->ranker);
         if ($this->ranker === self::SPH_RANK_EXPR) {
             $req .= pack('N', strlen($this->rankexpr)) . $this->rankexpr;
         }
@@ -1332,6 +1464,19 @@ class SphinxClient
 
         // select-list
         $req .= pack('N', strlen($this->select)) . $this->select;
+
+        // max_predicted_time
+        if ($this->predictedtime > 0) {
+            $req .= pack('N', (int) $this->predictedtime);
+        }
+
+        $req .= pack('N', strlen($this->outerorderby)) . $this->outerorderby;
+        $req .= pack('NN', $this->outeroffset, $this->outerlimit);
+        if ($this->hasouter) {
+            $req .= pack('N', 1);
+        } else {
+            $req .= pack('N', 0);
+        }
 
         // mbstring workaround
         $this->mbPop();
@@ -1545,6 +1690,9 @@ class SphinxClient
                     } elseif ($type === self::SPH_ATTR_STRING) {
                         $attrvals[$attr] = substr($response, $p, $val);
                         $p += $val;
+                    } elseif ($type === self::SPH_ATTR_FACTORS) {
+                        $attrvals[$attr] = substr($response, $p, $val - 4);
+                        $p += $val - 4;
                     } else {
                         $attrvals[$attr] = $this->fixUint($val);
                     }
@@ -1838,15 +1986,16 @@ class SphinxClient
     /**
      * Batch update given attributes in given documents
      *
-     * @param string  $index  search index
-     * @param array   $attrs  array of attribute names
-     * @param array   $values hash of arrays of new attribute values keyed by document ID
-     * @param boolean $mva    whether to treat attributes as MVAs
+     * @param string  $index             search index
+     * @param array   $attrs             array of attribute names
+     * @param array   $values            hash of arrays of new attribute values keyed by document ID
+     * @param boolean $mva               whether to treat attributes as MVAs
+     * @param boolean $ignorenonexistent whether to ignore non existent attributes
      *
      * @return integer Amount of updated documents (0 or more) on success, -1 on failure
      * @throws \InvalidArgumentException When inputs do not match required types
      */
-    public function updateAttributes($index, array $attrs, array $values, $mva = false)
+    public function updateAttributes($index, array $attrs, array $values, $mva = false, $ignorenonexistent = false)
     {
         // verify everything
         $index = strval($index);
@@ -1895,6 +2044,7 @@ class SphinxClient
         $req = pack('N', strlen($index)) . $index;
 
         $req .= pack('N', count($attrs));
+        $req .= pack('N', (Boolean) $ignorenonexistent ? 1 : 0);
         foreach ($attrs as $attr) {
             $req .= pack('N', strlen($attr)) . $attr;
             $req .= pack('N', $mva ? 1 : 0);
@@ -2414,5 +2564,26 @@ class SphinxClient
             // x32 route, workaround php signed/unsigned braindamage
             return sprintf('%u', $value);
         }
+    }
+
+    /**
+     * Sets a flag bit
+     *
+     * @param integer $flag
+     * @param integer $bit
+     * @param boolean $on
+     *
+     * @return integer
+     */
+    public function setBit($flag, $bit, $on)
+    {
+        if ($on) {
+            $flag += (1 << $bit);
+        } else {
+            $reset = 255 ^ (1 << $bit);
+            $flag = $flag & $reset;
+        }
+
+        return $flag;
     }
 }
